@@ -1,5 +1,6 @@
 package server;
 
+import framework.engine.DependencyInjectionEngine;
 import framework.response.JsonResponse;
 import framework.response.Response;
 import framework.request.enums.Method;
@@ -18,9 +19,11 @@ public class ServerThread implements Runnable{
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
+    private DependencyInjectionEngine di;
 
-    public ServerThread(Socket socket){
+    public ServerThread(Socket socket, DependencyInjectionEngine di){
         this.socket = socket;
+        this.di = di;
 
         try {
             in = new BufferedReader(

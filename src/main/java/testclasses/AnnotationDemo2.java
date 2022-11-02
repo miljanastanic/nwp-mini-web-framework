@@ -1,4 +1,4 @@
-package framework.testclasses;
+package testclasses;
 
 import framework.annotations.Controller;
 import framework.annotations.GET;
@@ -7,19 +7,19 @@ import framework.annotations.Path;
 
 @Controller
 public class AnnotationDemo2 {
+
+
+
     @GET
-    public void method1(){
+    @Path(path = "/test1")
+    public void getmetoda(){
         System.out.println("This is method1");
     }
 
     @POST
-    public void method2(){
+    @Path(path = "/test2")
+    public void postmetoda(){
         System.out.println("This is method2");
-    }
-
-    @Path(path = "/metoda3")
-    public void method3(){
-        System.out.println("This is method3");
     }
 
     public AnnotationDemo2(){
