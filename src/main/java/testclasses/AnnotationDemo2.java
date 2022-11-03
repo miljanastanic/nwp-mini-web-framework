@@ -1,14 +1,25 @@
 package testclasses;
 
-import framework.annotations.Controller;
-import framework.annotations.GET;
-import framework.annotations.POST;
-import framework.annotations.Path;
+import framework.annotations.*;
 
 @Controller
 public class AnnotationDemo2 {
 
+    @Autowired(verbose = true)
+    private Test1 bean1;
 
+    @Autowired(verbose = true)
+    private Test4 bean2;
+
+    @Autowired(verbose = true)
+    private Test2 service1;
+
+    @Autowired(verbose = true)
+    private Test3 component1;
+
+    @Autowired(verbose = true)
+    @Qualifier("Implementation")
+    private TestI interface1;
 
     @GET
     @Path(path = "/test1")
