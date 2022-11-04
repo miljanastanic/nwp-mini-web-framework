@@ -6,13 +6,13 @@ import framework.annotations.*;
 public class AnnotationDemo3 {
 
     @Autowired(verbose = false)
-    private Test1 bean3;
+    private Test5 bean3;
 
     @Autowired(verbose = false)
-    private Test4 bean4;
+    private Test6 bean4;
 
     @Autowired(verbose = false)
-    private Test2 service2;
+    private Test7 service2;
 
     @GET
     @Path(path = "/test3")

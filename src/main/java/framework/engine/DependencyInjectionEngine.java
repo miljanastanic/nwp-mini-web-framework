@@ -4,6 +4,7 @@ import framework.annotations.*;
 
 import java.io.File;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -19,26 +20,27 @@ public class DependencyInjectionEngine {
     private final HashMap<Class, Object> controllers = new HashMap<>();
     private final HashMap<Class, Object> instancesSingelton = new HashMap<>();
     private final HashMap<Class, Object> instances = new HashMap<>();
+    private DependencyContainer dc = new DependencyContainer();
 
-
-    public DependencyInjectionEngine() throws ClassNotFoundException {
+    public DependencyInjectionEngine() throws ClassNotFoundException, IOException {
         filesIteration();
     }
 
-    private void filesIteration() throws ClassNotFoundException {
+    private void filesIteration() throws ClassNotFoundException, IOException {
         File dir = new File("C:\\Users\\milja\\Desktop\\Faks\\7 semestar\\nwp-domaci2\\src\\main\\java\\testclasses");
         iterate(dir.listFiles());
     }
 
 
-    private void iterate(File[] files) throws ClassNotFoundException {
+    private void iterate(File[] files) throws ClassNotFoundException, IOException {
         for (File file : files) {
             if (file.isDirectory()) {
-                System.out.println("Directory: " + file.getName() + "\n");
+                //System.out.println("Directory: " + file.getName() + "\n");
                 iterate(file.listFiles());
             } else {
                 String classname = file.getName().split("\\.")[0];
-                findClasses(classname);
+                //System.out.println("file " + file.getParentFile().getName() + "." + classname);
+                findClasses(file.getParentFile().getName() + "." + classname);
             }
         }
     }
@@ -46,17 +48,20 @@ public class DependencyInjectionEngine {
     @SuppressWarnings({"rawtypes"})
     private void findClasses(String classname){
         try {
-            Class test = Class.forName("testclasses." + classname);
+            Class test = Class.forName(classname);
             if (test.isAnnotationPresent(Controller.class)) {
                 Controller controller = (Controller) test.getAnnotation(Controller.class);
                 //System.out.println("Controller is present in class " + classname);
                 findMethods(test);
                 findAtributes(test);
+                if(dc.QDuplicates()){
+                    throw new Exception("Same implemenatations in Beans");
+                }
                 Object instance = test.getDeclaredConstructor().newInstance();
                 controllers.put(test, instance);
 
             }
-        }catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e){
+        } catch (Exception e){
             e.printStackTrace();
         }
     }
@@ -101,17 +106,21 @@ public class DependencyInjectionEngine {
             if(f.isAnnotationPresent(Autowired.class)) {
                 Autowired auto = f.getAnnotation(Autowired.class);
 
-                if(auto.verbose()){
-                    System.out.println("Initialized " + type + " " + name + " in "
-                            + cl.getName() + " on " + LocalDateTime.now() + " with " + auto.hashCode());
-                }
+
 
                 try {
+                    String klasaF = f.getType().toString().split(" ")[1];
+                    //System.out.println("klasa " + klasaF);
+                    Class test = Class.forName(klasaF);
+
                     if (type.isInterface()) {
-                        //atribut je interfejs
+                        if(!dc.addImplementations(f)) {
+                            throw new Exception("This field needs to have annotation @Qualifier");
+                        }
+
                     } else {
-                        String klasaF = f.getType().toString().split(" ")[1];
-                        Class test = Class.forName(klasaF);
+
+                        findAtributes(test);
 
                         if (test.isAnnotationPresent(Bean.class)) {
                             Bean bean = (Bean) test.getAnnotation(Bean.class);
@@ -120,11 +129,24 @@ public class DependencyInjectionEngine {
                                 if(instance == null){
                                     instance = test.getDeclaredConstructor().newInstance();
                                     instancesSingelton.put(test, instance);
+                                    if(auto.verbose()){
+                                        System.out.println("Initialized " + type + " " + name + " in "
+                                                + cl.getName() + " on " + LocalDateTime.now() + " with " + auto.hashCode());
+                                    }
                                 }
 
                             }else{
                                 Object instance = test.getDeclaredConstructor().newInstance();
                                 instances.put(test, instance);
+                                if(auto.verbose()){
+                                    System.out.println("Initialized " + type + " " + name + " in "
+                                            + cl.getName() + " on " + LocalDateTime.now() + " with " + auto.hashCode());
+                                }
+                            }
+
+                            if(test.isAnnotationPresent(Qualifier.class)){
+                                Qualifier q = (Qualifier) test.getAnnotation(Qualifier.class);
+                                dc.addClassValues(q.value(), test);
                             }
                         }
                         else if (test.isAnnotationPresent(Service.class)) {
@@ -132,20 +154,31 @@ public class DependencyInjectionEngine {
                             if(instance == null){
                                 instance = test.getDeclaredConstructor().newInstance();
                                 instancesSingelton.put(test, instance);
+                                if(auto.verbose()){
+                                    System.out.println("Initialized " + type + " " + name + " in "
+                                            + cl.getName() + " on " + LocalDateTime.now() + " with " + auto.hashCode());
+                                }
+                            }
+                        }
+                        else if (test.isAnnotationPresent(Component.class)){
+                            Object objekat = test.getDeclaredConstructor().newInstance();
+                            instances.put(test, objekat);
+                            if(auto.verbose()){
+                                System.out.println("Initialized " + type + " " + name + " in "
+                                        + cl.getName() + " on " + LocalDateTime.now() + " with " + auto.hashCode());
                             }
                         }
                         else{
-                            Object objekat = test.getDeclaredConstructor().newInstance();
-                            instances.put(test, objekat);
+                            throw new Exception("File dosen't have annotation @Bean or @Service or @Component" + klasaF);
                         }
                     }
-                } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
-        //System.out.println(instancesSingelton);
-        //System.out.println(instances);
+        //System.out.println("Singeltons" + instancesSingelton);
+        //System.out.println("Instances" + instances);
     }
 
     private Object findSingeltons(Class cl){
