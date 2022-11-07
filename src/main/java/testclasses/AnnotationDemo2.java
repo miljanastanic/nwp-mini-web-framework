@@ -1,6 +1,13 @@
 package testclasses;
 
 import framework.annotations.*;
+import framework.request.Request;
+import framework.request.enums.Method;
+import framework.response.JsonResponse;
+import framework.response.Response;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 public class AnnotationDemo2 {
@@ -23,14 +30,24 @@ public class AnnotationDemo2 {
 
     @GET
     @Path(path = "/test1")
-    public void getmetoda(){
-        System.out.println("This is method1");
+    public Response getmetoda(Request request){
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("route_location", request.getLocation());
+        responseMap.put("route_method", request.getMethod().toString());
+        responseMap.put("parameters", request.getParameters());
+        Response response = new JsonResponse(responseMap);
+        return response;
     }
 
     @POST
     @Path(path = "/test2")
-    public void postmetoda(){
-        System.out.println("This is method2");
+    public Response postmetoda(Request request){
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("route_location", request.getLocation());
+        responseMap.put("route_method", request.getMethod().toString());
+        responseMap.put("parameters", request.getParameters());
+        Response response = new JsonResponse(responseMap);
+        return response;
     }
 
     public AnnotationDemo2(){

@@ -8,10 +8,10 @@ public class MethodMapper {
 
     private String httpMethod;
     private String path;
-    private Class controller;
+    private Object controller;
     private Method method;
 
-    public MethodMapper(String httpMethod, String path, Class controller, Method method) {
+    public MethodMapper(String httpMethod, String path, Object controller, Method method) {
         this.httpMethod = httpMethod;
         this.path = path;
         this.controller = controller;

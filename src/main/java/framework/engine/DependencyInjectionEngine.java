@@ -1,6 +1,8 @@
 package framework.engine;
 
 import framework.annotations.*;
+import framework.request.Request;
+import framework.response.Response;
 
 import java.io.File;
 
@@ -9,14 +11,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class DependencyInjectionEngine {
 
-    private final HashMap<Class, MethodMapper> routes = new HashMap<>();
+    private final List<MethodMapper> routes = new LinkedList<>();
     private final HashMap<Class, Object> controllers = new HashMap<>();
     private final HashMap<Class, Object> instancesSingelton = new HashMap<>();
     private final HashMap<Class, Object> instances = new HashMap<>();
@@ -72,25 +71,27 @@ public class DependencyInjectionEngine {
         for (Method m : methods) {
             String name = m.getName();
             try {
-                Method method = cl.getDeclaredMethod(name);
+                Method method = cl.getDeclaredMethod(name, Request.class);
                 if (method.isAnnotationPresent(Path.class)) {
 
                     Path path = method.getAnnotation(Path.class);
 
                     if(method.isAnnotationPresent(GET.class)) {
                         //System.out.println("Putanja " + path.path() + " metode " + name + " sa anotacijom GET");
-                        MethodMapper mp = new MethodMapper("GET", path.path(), cl, method);
-                        routes.put(cl, mp);
+                        Object clas = cl.getDeclaredConstructor().newInstance();
+                        MethodMapper mp = new MethodMapper("GET", path.path(), clas, method);
+                        routes.add(mp);
                     }
                     if(method.isAnnotationPresent(POST.class)){
                         //System.out.println("Putanja " + path.path() + " metode " + name + " sa anotacijom POST");
-                        MethodMapper mp = new MethodMapper("POST", path.path(), cl, method);
-                        routes.put(cl, mp);
+                        Object clas = cl.getDeclaredConstructor().newInstance();
+                        MethodMapper mp = new MethodMapper("POST", path.path(), clas, method);
+                        routes.add(mp);
                     }
 
 
                 }
-            }catch(NoSuchMethodException e){
+            }catch(NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e){
                 e.printStackTrace();
             }
         }
@@ -184,6 +185,28 @@ public class DependencyInjectionEngine {
     private Object findSingeltons(Class cl){
         Object klasa = instancesSingelton.get(cl);
         return klasa;
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public Response findMethodRequest(Request request) throws InvocationTargetException, IllegalAccessException {
+        String reqMethod = request.getMethod().name();
+        String reqLocation = request.getLocation();
+
+        Response response = null;
+
+
+        for (MethodMapper methodMappers: routes) {
+            if(reqLocation.equals(methodMappers.getPath()) &&
+                    reqMethod.equals(methodMappers.getHttpMethod())){
+
+                Object cl = methodMappers.getController();
+                Object returntype = methodMappers.getMethod().invoke(cl, request);
+                response = (Response) returntype;
+                return response;
+            }
+        }
+
+        return response;
     }
 
 
